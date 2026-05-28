@@ -92,6 +92,14 @@ The user must be able to decide **yes / no / skip from what you show them alone*
 
 For MODIFY and REMOVE, wait for the user's answer before moving on. Accept short answers ("keep", "modify", "remove", "skip") or full descriptions ("modify like this: …"). For KEEP, you've already moved on — no input needed.
 
+### Any other time you need user input — use the same bold-verb format
+
+If you pause for the user to make a decision *outside* the per-scaffold template — for example, asking whether to include a borderline scaffold, flagging a transition point, or summarizing options before continuing — use the same structured prompt:
+
+> **Your call:** type **modify** / **keep** / **remove** / or describe a different approach.
+
+**Don't bury decision points in prose.** Phrases like *"I'd recommend modifying or removing this one"* let the action verbs blend into the paragraph and get missed on first read. The user must be able to spot the decision point at a glance — bolded verbs, separate line, no surrounding sentence-shaped prose.
+
 ## Plain language rule
 
 Write your reasoning as if to a technically literate person who *doesn't read engineering blogs*. Concrete substitutions:
