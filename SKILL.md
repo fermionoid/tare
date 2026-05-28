@@ -26,7 +26,7 @@ State what you're about to audit in one sentence ("I'll audit the N skills under
 
 ## Step 2: For each scaffold, judge three things
 
-- **Is it still solving a problem the current model has?** If the capability has been internalized by the model, the scaffold is dead weight.
+- **Is it still solving a problem the current model has?** Assume the user is on the latest model their platform offers — that's the default case. If the capability has been internalized by that model, the scaffold is dead weight. *Exception:* if the user has mentioned they also use older or cheaper models (e.g., "I sometimes drop to a smaller model for cost"), bias toward keeping scaffolds the weaker model still needs.
 - **Does it overlap with another installed scaffold?** Duplicates accumulate when users layer different sources of advice (multiple skill packs, copy-pasted prompts).
 - **Is its trigger or wording correctly scoped?** Too broad → fires when not wanted. Too narrow → never fires. Stale wording → may misfire on current model behavior.
 
@@ -82,7 +82,7 @@ When in doubt, lean **REMOVE**. Bloat is the failure mode tare exists to address
 
 - Do not run A/B tests or evals. Your judgment is qualitative, based on reading the scaffold and reasoning about current model capabilities. Be honest when you're uncertain.
 - Do not touch hooks, server configs, or settings files unless the user explicitly asks.
-- Do not assume which model the user is on. Ask if it matters to your judgment.
+- Don't proactively ask which model the user is on — assume latest. They'll mention it if they're mixing models for cost.
 
 ## Why the name
 
