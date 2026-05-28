@@ -43,10 +43,11 @@ Before Step 2, decide which mode the user wants and stick to it:
 
 ## Step 2: Classify first, then judge
 
-Scaffolds come in three fundamentally different kinds, and they deserve different biases:
+Scaffolds come in four fundamentally different kinds, and they deserve different biases:
 
-- **Capability crutch** — written to patch something the model used to fail at, or to enforce a workflow that helped a weaker model perform. These age out as models improve. Examples: "remember to use the to-do list tool", "always write a failing test before code", "verify your assumptions explicitly before answering".
+- **Capability crutch** — written to patch something the model used to fail at, where the only function is to remind the model of something it would otherwise miss. These age out as models improve. Examples: "remember to use the to-do list tool", "list the call sites before refactoring across them".
 - **Personal style / values / workflow** — reflects how the user wants the model to think, speak, weight things, or describes their specific setup that the model can't infer. Examples: "always start with the actual problem", "default to first-principles thinking", "be honest about uncertainty", "this project uses Vitest", "save observations to my notes file when X happens".
+- **Safety / workflow guard** — a scaffold that *explicitly* enforces a precondition the user wants maintained even when the model "usually" handles it. Examples: "always confirm before deleting", "check git status before commit", "run tests before declaring done", "don't overwrite user changes without asking", "backup before destructive operation", "verify assumptions before answering", "always write a failing test before code". Default **KEEP**. MODIFY only to shorten or clarify. **REMOVE never applies** — "the model usually does this" is exactly the case a guard exists for, because *usually* silently becomes *sometimes doesn't*, and the user has chosen to harden against that.
 - **Convention slot** — a file whose value lives in *the filename being a recognized hook*, not in its content. The agent platform looks for this exact name and reads whatever's inside (which may be nothing). Known convention filenames as of 2026 — treat each of these as a slot:
   - **`AGENTS.md`** — the rising cross-tool standard, read by 60+ agentic tools including Claude Code, Codex, Cursor, Aider, Gemini CLI, Windsurf, GitHub Copilot, Devin, Continue, Roo Code, Zed AI, MiniMax, and many more. Protecting `AGENTS.md` alone covers most of the ecosystem.
   - **`CLAUDE.md`** — Claude Code (both `~/.claude/CLAUDE.md` and project-root `CLAUDE.md`)
@@ -71,13 +72,24 @@ Then judge:
 
 Read the full body of the scaffold for context, not just its description or title.
 
-## Step 3: Recommend
+## Step 3: Recommend (with hard protected check)
 
 One of three labels:
 
 - **KEEP** — still net positive
 - **MODIFY** — has value but needs editing. Include the concrete proposed change (specific lines, before/after, replacement text)
-- **REMOVE** — no longer earns its cost given current model capabilities
+- **REMOVE** — no longer earns its cost, AND you can articulate the concrete user-visible behavior change removal will produce
+
+### Hard protected check — run this before any REMOVE recommendation
+
+If any of the following is true, the recommendation is **KEEP** (or MODIFY, if there's substantive content to edit), regardless of how stale or redundant the scaffold looks:
+
+1. **The filename matches a convention slot** (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, `.cursor/rules/*`, `.windsurfrules`, `CONVENTIONS.md`, `user_rules.md`, `.trae/rules/*`, or similar platform hook)
+2. **The scaffold is a safety / workflow guard** (encodes a precondition the user wants enforced even when the model "usually" handles it — see Step 2)
+3. **The scaffold lives inside a third-party bundle** (e.g., `~/.codex/superpowers/*`, plugin-managed directories) — bundle-internal files are not individually pruneable; for these, the only legitimate bundle-level actions are KEEP / UPDATE / UNINSTALL
+4. **You cannot finish the sentence** *"After removing this, the user will no longer experience [specific concrete behavior]."* If the best you can say is "it looks redundant," the burden of proof has not been met — default KEEP.
+
+A REMOVE recommendation that fails any of these four checks is silently destructive. Don't produce it.
 
 ## Step 4: Present each scaffold clearly
 
@@ -91,7 +103,14 @@ The user must be able to decide **yes / no / skip from what you show them alone*
 
 **Recommendation: KEEP / MODIFY / REMOVE**
 
-**For KEEP** — one sentence on what unique value it adds that the current model wouldn't do by default. No quoting needed. End the block with: *"Moving on to the next scaffold."* and proceed without prompting. KEEP has no action to confirm — don't ask the user to make a decision about a non-action. (They can always interrupt if they disagree.)
+**For KEEP** — one sentence on *why it's net positive*, framed by the scaffold's class:
+
+- **Convention slot** → why the slot needs to remain (it's a platform hook; presence is the value)
+- **Safety / workflow guard** → what risk or precondition it constrains
+- **Personal style / values** → what user-chosen behavior it makes explicit
+- **Capability gap** → what the current model wouldn't do by default that this scaffold ensures
+
+No quoting needed. End the block with: *"Moving on to the next scaffold."* and proceed without prompting. KEEP has no action to confirm — don't ask the user to make a decision about a non-action. (They can always interrupt if they disagree.)
 
 **For MODIFY** — quote the *exact text being removed* in one code block. Quote the *exact text being added* in another (if any). Then 2-3 plain-language sentences on why. End with: *"Result: file goes from X lines to Y lines."* Then prompt:
 > **Your call:** type **modify** to apply this edit, **keep** to leave the file unchanged, **remove** to delete the whole scaffold instead, or describe a different edit.
@@ -166,8 +185,17 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 
 ## Step 5: Execute
 
-**If you have file-system tools and the scaffold is on disk:**
-- **REMOVE** → delete the file or directory
+**Before executing REMOVE, run the protected check one more time** (see Step 3). If the path matches a convention slot, is a safety/workflow guard, or lives inside a third-party bundle — abort REMOVE and offer KEEP. Belt-and-suspenders: this catches any case where classification missed but the execution-time check sees the protected path.
+
+**For third-party bundles** (e.g., `~/.codex/superpowers/*`, `~/.claude/plugins/*`): never execute per-file REMOVE on bundle internals. The only bundle-level actions are:
+- **KEEP** the bundle as-is
+- **UPDATE** the bundle (suggest re-installing latest; defer to the bundle's own update mechanism)
+- **UNINSTALL** the entire bundle (suggest the platform's uninstall command, don't `rm -rf` files directly)
+
+Per-file observations *within* a bundle can be reported as commentary ("3 of these skills look outdated"), but the action belongs upstream (open issue/PR) or via platform blocklist mechanisms.
+
+**If you have file-system tools and the scaffold is non-bundle:**
+- **REMOVE** → delete the file or directory (after passing the protected check)
 - **MODIFY** → apply the edit
 - **KEEP** → do nothing
 
@@ -193,6 +221,10 @@ When all scaffolds are processed, summarize:
 **For personal style / values / workflow — lean KEEP.** Even when the model could behave that way unprompted, the user has chosen to make the behavior explicit, and erasing that erases their voice. Only REMOVE these if they actively contradict another scaffold or current default behavior.
 
 **For convention slots — always KEEP, regardless of content.** Empty or near-empty convention files (`AGENTS.md`, `CLAUDE.md`, etc.) are placeholders the platform hooks into — the slot itself is the value. Recommending REMOVE on these is one of the most damaging mistakes tare can make, because the user loses functionality silently. MODIFY is fine if the user wants to add content. REMOVE never applies.
+
+**For safety / workflow guards — always KEEP.** When a scaffold says "always confirm before deleting" or "verify before answering" or "run tests before declaring done," its value is *exactly* in the case where the model would "usually" handle it on its own. The user wrote this down because they didn't want to gamble on *usually*. Removing it removes the guarantee. REMOVE never applies; MODIFY only to shorten or sharpen, not to delete the guard.
+
+**For third-party bundles — operate at bundle level, never per-file.** Bundle internals belong upstream. Bundle-level actions: KEEP / UPDATE / UNINSTALL.
 
 **When uncertain which kind a scaffold is — ask before recommending.** Don't guess and risk deleting someone's voice or breaking a convention hook. Tare exists to catch bloat, not to flatten personal style or remove protected slots.
 
@@ -223,3 +255,16 @@ If you cannot finish that sentence with something concrete, default to **KEEP**.
 ## Why the name
 
 A *tare* on a scale subtracts the weight of the container so you can measure what's actually inside. Same here: subtract the accumulated scaffolding so what's left is what's actually doing work.
+
+## Sanity checklist (regression cases)
+
+These are cases tare has gotten wrong in past dogfooding. The agent must produce the expected outcome on each. If any of these would not behave as listed, the SKILL has regressed:
+
+- Empty `~/.codex/AGENTS.md` (or any path's `AGENTS.md`) → **KEEP** (convention slot)
+- Empty `~/.claude/CLAUDE.md` (or project-root `CLAUDE.md`) → **KEEP** (convention slot)
+- Empty `GEMINI.md`, `.cursorrules`, `.windsurfrules`, `CONVENTIONS.md` → **KEEP** (convention slot)
+- A scaffold instructing *"always confirm before deleting"* / *"check git status before commit"* / *"verify assumptions before answering"* / *"run tests before declaring done"* → **KEEP** or **MODIFY** to shorten, **never REMOVE** because "the model usually does this"
+- Anything under `~/.codex/skills/.system/*` (or analogous platform-bundled paths) → **SKIPPED in Step 1**, never produces a recommendation block
+- A skill inside `~/.codex/superpowers/<name>/` (or any third-party bundle) → audited at **bundle level**, no per-file REMOVE/MODIFY
+- A scaffold expressing user identity or style (e.g., *"always lead with the actual problem"*, *"reason from first principles"*, *"be honest about uncertainty"*) → **KEEP**, even when the model now does this by default
+- A symlink in the user's skills directory → check `readlink` before acting; if symlinked to a project the user owns, recommend KEEP unless the user explicitly says otherwise
