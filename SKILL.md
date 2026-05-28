@@ -47,7 +47,15 @@ Scaffolds come in three fundamentally different kinds, and they deserve differen
 
 - **Capability crutch** — written to patch something the model used to fail at, or to enforce a workflow that helped a weaker model perform. These age out as models improve. Examples: "remember to use the to-do list tool", "always write a failing test before code", "verify your assumptions explicitly before answering".
 - **Personal style / values / workflow** — reflects how the user wants the model to think, speak, weight things, or describes their specific setup that the model can't infer. Examples: "always start with the actual problem", "default to first-principles thinking", "be honest about uncertainty", "this project uses Vitest", "save observations to my notes file when X happens".
-- **Convention slot** — a file whose value lives in *the filename being a recognized hook*, not in its content. The agent platform looks for this exact name and reads whatever's inside (which may be nothing). Examples: `AGENTS.md` (Codex / Cursor / Aider), `CLAUDE.md` (Claude Code), `GEMINI.md` (Gemini CLI), `.cursorrules` / `.cursor/rules/*` (Cursor), `.aider.conf.yml` (Aider), and similar platform conventions.
+- **Convention slot** — a file whose value lives in *the filename being a recognized hook*, not in its content. The agent platform looks for this exact name and reads whatever's inside (which may be nothing). Known convention filenames as of 2026 — treat each of these as a slot:
+  - **`AGENTS.md`** — the rising cross-tool standard, read by 60+ agentic tools including Claude Code, Codex, Cursor, Aider, Gemini CLI, Windsurf, GitHub Copilot, Devin, Continue, Roo Code, Zed AI, MiniMax, and many more. Protecting `AGENTS.md` alone covers most of the ecosystem.
+  - **`CLAUDE.md`** — Claude Code (both `~/.claude/CLAUDE.md` and project-root `CLAUDE.md`)
+  - **`GEMINI.md`** — Gemini CLI (hierarchical: `~/.gemini/GEMINI.md` + workspace + file-specific)
+  - **`.cursorrules`** (legacy) and **`.cursor/rules/*.mdc`** (current) — Cursor
+  - **`.windsurfrules`** — Windsurf
+  - **`CONVENTIONS.md`** — Aider
+  - **`user_rules.md`** and **`.trae/rules/project_rules.md`** — Trae (ByteDance)
+  - And similar platform-specific hook files. **If the filename pattern matches a tool's documented convention, treat it as a slot.**
 
 **The distinction matters because "the model CAN do X" is not the same as "the model WILL do X consistently / announce it / emphasize it."** A style instruction shifts visible model behavior toward what the user wants even when the underlying capability is already there. Erasing it erases the user's voice.
 
@@ -188,11 +196,29 @@ When all scaffolds are processed, summarize:
 
 **When uncertain which kind a scaffold is — ask before recommending.** Don't guess and risk deleting someone's voice or breaking a convention hook. Tare exists to catch bloat, not to flatten personal style or remove protected slots.
 
-## Out of scope (v1)
+## Never touch — these are out of scope entirely
+
+These files are *not* user instructions and never should be candidates for any tare action (KEEP / MODIFY / REMOVE):
+
+- **Settings files**: `*/settings.json`, `*/settings.local.json`, `~/.codex/config.toml`, `~/.kimi/config.toml`, any platform's main config TOML/JSON
+- **MCP server configs**: `.mcp.json`, `mcp.json`, equivalents elsewhere — removing breaks MCP integrations silently
+- **Ignore files**: `.cursorignore`, `.aiderignore`, `.cursorindexingignore`, `.gitignore`
+- **Plugin / marketplace state**: `blocklist.json`, `installed_plugins.json`, `known_marketplaces.json`, plugin install manifests
+- **History / memory / session state**: `history.jsonl`, `memory/` directories, session files, conversation logs — these are state, not scaffolds
+- **Hooks**: anything in `*/hooks/` or referenced by settings' hooks config
+
+If you encounter any of these during enumeration, note them in your scope statement as *"out of scope — these aren't tare's concern"* and move on. Don't even produce a recommendation block for them.
+
+## Other out-of-scope rules
 
 - Do not run A/B tests or evals. Your judgment is qualitative, based on reading the scaffold and reasoning about current model capabilities. Be honest when you're uncertain.
-- Do not touch hooks, server configs, or settings files unless the user explicitly asks.
 - Don't proactively ask which model the user is on — assume latest. They'll mention it if they're mixing models for cost.
+
+## The articulation rule (most important guardrail)
+
+**Before recommending REMOVE, you must be able to articulate the specific user-visible behavior change that removal will produce.** "It looks redundant" or "it's empty" is not enough. You should be able to finish the sentence: *"After removing this, the user will no longer experience [specific concrete behavior]."*
+
+If you cannot finish that sentence with something concrete, default to **KEEP**. This is the guardrail that prevents silently-destructive REMOVE recommendations on files whose value isn't in their content (convention slots, hook files, structural placeholders). The burden of proof is on REMOVE, not KEEP.
 
 ## Why the name
 
