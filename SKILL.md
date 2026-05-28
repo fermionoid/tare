@@ -43,14 +43,17 @@ Before Step 2, decide which mode the user wants and stick to it:
 
 ## Step 2: Classify first, then judge
 
-Scaffolds come in two fundamentally different kinds, and they deserve opposite biases:
+Scaffolds come in three fundamentally different kinds, and they deserve different biases:
 
 - **Capability crutch** — written to patch something the model used to fail at, or to enforce a workflow that helped a weaker model perform. These age out as models improve. Examples: "remember to use the to-do list tool", "always write a failing test before code", "verify your assumptions explicitly before answering".
 - **Personal style / values / workflow** — reflects how the user wants the model to think, speak, weight things, or describes their specific setup that the model can't infer. Examples: "always start with the actual problem", "default to first-principles thinking", "be honest about uncertainty", "this project uses Vitest", "save observations to my notes file when X happens".
+- **Convention slot** — a file whose value lives in *the filename being a recognized hook*, not in its content. The agent platform looks for this exact name and reads whatever's inside (which may be nothing). Examples: `AGENTS.md` (Codex / Cursor / Aider), `CLAUDE.md` (Claude Code), `GEMINI.md` (Gemini CLI), `.cursorrules` / `.cursor/rules/*` (Cursor), `.aider.conf.yml` (Aider), and similar platform conventions.
 
 **The distinction matters because "the model CAN do X" is not the same as "the model WILL do X consistently / announce it / emphasize it."** A style instruction shifts visible model behavior toward what the user wants even when the underlying capability is already there. Erasing it erases the user's voice.
 
-**If you can't tell which kind a scaffold is, ask the user one line:** *"Is this an aging workaround, or is it your personal style? Either is fine — I just want to bias the right way."* Don't guess.
+**A convention slot is even more delicate:** an empty `AGENTS.md` looks like dead weight, but it's actually a placeholder the platform hooks into. Removing it loses the slot — the user can't easily get back the "if I drop instructions here, they're picked up automatically" behavior without recreating the file. **Empty does not mean dead.**
+
+**If you can't tell which kind a scaffold is, ask the user one line:** *"Is this an aging workaround, your personal style, or a platform convention slot? Either is fine — I just want to bias the right way."* Don't guess.
 
 Then judge:
 
@@ -181,7 +184,9 @@ When all scaffolds are processed, summarize:
 
 **For personal style / values / workflow — lean KEEP.** Even when the model could behave that way unprompted, the user has chosen to make the behavior explicit, and erasing that erases their voice. Only REMOVE these if they actively contradict another scaffold or current default behavior.
 
-**When uncertain which kind a scaffold is — ask before recommending.** Don't guess and risk deleting someone's voice. Tare exists to catch bloat, not to flatten personal style.
+**For convention slots — always KEEP, regardless of content.** Empty or near-empty convention files (`AGENTS.md`, `CLAUDE.md`, etc.) are placeholders the platform hooks into — the slot itself is the value. Recommending REMOVE on these is one of the most damaging mistakes tare can make, because the user loses functionality silently. MODIFY is fine if the user wants to add content. REMOVE never applies.
+
+**When uncertain which kind a scaffold is — ask before recommending.** Don't guess and risk deleting someone's voice or breaking a convention hook. Tare exists to catch bloat, not to flatten personal style or remove protected slots.
 
 ## Out of scope (v1)
 
