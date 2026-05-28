@@ -11,12 +11,19 @@ You are running a scaffold audit. The user has accumulated scaffolds — skill f
 
 **If you have file-system tools, just go.** Default to the standard scaffold locations for whatever platform you're running on:
 
-- Claude Code → `~/.claude/skills/*` and `~/.claude/commands/*` (skip `tare` itself)
-- Codex CLI → the user's Codex skills/instructions directory
+- Claude Code → `~/.claude/skills/*` and `~/.claude/commands/*`
+- Codex CLI → `~/.codex/skills/*` (excluding `.system/`), the user's `~/.codex/superpowers/` if installed, and `~/.codex/AGENTS.md`
 - Cursor / Windsurf → `.cursor/rules/*` or `.cursorrules` in the current project root
 - Anything else with file access → check that platform's obvious config location
 
-State what you're about to audit in one sentence ("I'll audit the N skills under `~/.claude/skills/`") and start. **Do not block on confirmation.** The user invoked you — they've already opted in.
+**Always skip these — they're not the user's choices:**
+
+- `tare` itself
+- **Platform-bundled / system scaffolds.** Strong signals: path contains `/.system/` (Codex convention), directory name describes the platform's own runtime (e.g., `codex-primary-runtime`, `claude-primary-*`), or SKILL.md frontmatter explicitly marks it as bundled. These are infrastructure shipped by the platform, not things the user installed — auditing them wastes attention with no possible action (the user can't remove what the platform manages).
+
+**For borderline scaffolds** (user's skills directory but the user might not have installed it themselves — e.g., something auto-installed by a sibling tool like a Mac menu-bar app): don't silently include or exclude. Mention it once in your initial scope statement: *"I'll also include `chronicle` — that one might have been auto-installed by another tool; tell me if you'd rather skip it."*
+
+State what you're about to audit in one sentence ("I'll audit N user-installed scaffolds…") and start. **Do not block on confirmation.** The user invoked you — they've already opted in.
 
 **Only ask first if:**
 
