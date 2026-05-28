@@ -1,45 +1,40 @@
 # tare
 
-> Tare your assumptions before building an AI workflow.
+> Subtract the scaffolding that's no longer earning its keep.
 
-**tare** /tɛə(r)/ — *verb.* on a balance scale, to subtract the weight of the container so you can measure what's actually inside.
+A Claude Code skill that audits your installed scaffolds — skills, slash commands, custom instructions — and prunes the ones that have become bloat. Past scaffolding tends to overfit to past model behavior; tare finds the overfit and removes or edits it on your behalf.
 
-A single Claude Code skill. Five questions to ask yourself before you scaffold an AI workflow, so you don't quietly impose your own habits on a model that doesn't share them.
+## What it does
 
-## What it's for
+When you invoke tare, it walks through each scaffold you've installed and judges:
 
-Most failures in agentic workflows aren't from the model being weak — they're from over-specifying. You wrote out the steps you would take, fed them to the model, and now the model is doing your less-good version of the task.
+- Is it still solving a problem the current model has?
+- Does it overlap with something else you've installed?
+- Is its trigger description correctly scoped?
 
-tare is five questions to catch that before you commit.
+For each scaffold it gives you a **KEEP / MODIFY / REMOVE** recommendation with reasoning. You confirm the direction (one keystroke per scaffold); tare does the file edits and deletions for you. You don't open an editor.
 
-## When it triggers
+## When to run it
 
-- Designing a new AI workflow
-- An existing workflow is stuck on something the model "obviously" should handle
-- A major model version just shipped — re-run on the workflows you still use, because past harness becomes present overfit
+- After a major model version ships — old crutches turn into overfit
+- When your context feels cluttered, or skills fire when they shouldn't
+- When you've layered multiple skill packs and suspect duplication
 
-Not for: single-shot prompting, debugging individual outputs, general coding.
+Not for: small prompt tweaks, single-shot prompting, or general debugging.
 
 ## Install (Claude Code)
 
 ```bash
 mkdir -p ~/.claude/skills/tare
-curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/SKILL.md -o ~/.claude/skills/tare/SKILL.md
+curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/SKILL.md \
+  -o ~/.claude/skills/tare/SKILL.md
 ```
 
-Or clone the repo and copy `SKILL.md` over.
-
-Claude will surface the skill when relevant. You can also invoke it explicitly: *"run tare on this design."*
-
-## Install (other agents)
-
-Copy `SKILL.md` to wherever your agent loads skills or instructions. The body is plain markdown — only the YAML frontmatter is Claude-skill flavored, and any agent that ignores frontmatter will still read the body correctly.
+Then in a Claude Code session, say *"run tare"* or *"audit my skills"*.
 
 ## Why "tare"
 
-A tare button on a scale subtracts the weight of the container. It doesn't measure something new; it removes something old so the measurement is honest.
-
-That's what these questions do: subtract the assumptions you brought from *"how a human does this,"* so what's left is what the AI actually needs.
+The *tare* button on a scale subtracts the weight of the container so you measure what's actually inside. Same idea here.
 
 ## License
 

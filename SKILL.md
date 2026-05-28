@@ -1,44 +1,80 @@
 ---
 name: tare
-description: Use this skill before building or scaffolding any AI workflow — when the user is designing a multi-step prompt, an agent pipeline, a chain of tool calls, or any structured way of getting an LLM to do a task. Also use when an existing AI workflow is stuck and the user is wondering why the model "isn't doing the obvious thing." Walks the user through five questions that expose where they are unnecessarily imposing human process on the model. Do NOT use for single-shot prompts, debugging individual outputs, small prompt tweaks, or general coding tasks unrelated to AI workflow design.
+description: Use this skill when the user explicitly asks to audit, prune, clean, or "tare" their installed Claude Code scaffolds — phrases like "run tare", "audit my skills", "tare my scaffolds", "clean up my skills", "my skills feel bloated". Also appropriate to surface after a major model version has shipped, since past scaffolding tends to become overfit to past model behavior. The skill walks through each scaffold under ~/.claude/skills/, judges whether it still earns its cost given current model capabilities, and proposes KEEP / MODIFY / REMOVE per scaffold for the user to confirm — then executes the change. Do NOT use for general coding tasks, single-shot prompts, debugging individual outputs, or anything other than explicit scaffold auditing.
 ---
 
 # tare
 
-Five questions to ask yourself before scaffolding an AI workflow. The goal is to subtract assumptions you brought from "how a human does this," so what's left is what the AI actually needs.
+You are running a scaffold audit. The user has installed various skills, custom instructions, and commands over time. Some of these were crutches for past model limitations and the model no longer needs them. Some overlap with each other. Some are scoped wrong and fire when they shouldn't. The user wants to find and prune the bloat — they don't want to do the file edits themselves, you will.
 
-Walk through them as *questions*, not as a checklist with right answers. The point is to slow down and notice where your framing is doing more work than the task itself requires.
+## Procedure
 
-## The questions
+### 1. Announce and enumerate
 
-1. **Is this step a human constraint, or task essence?**
-   Many steps in your design exist because *humans* needed them — stages, handoffs, intermediate artifacts. An AI may not need any of that. Mark which steps survive if you remove the human-process residue.
+Tell the user you're starting a tare audit. Then list everything under `~/.claude/skills/` — each subdirectory's `SKILL.md` (or top-level `.md` file), with the `description` frontmatter line shown truncated. Also list `~/.claude/commands/*.md` if any exist.
 
-2. **Are you decomposing the problem, or decomposing the process?**
-   Decomposing the *problem* (goal → subgoals) is fine. Decomposing the *process* (feeding the AI your manual procedure step by step) is just imposing your slower way of working on the model. If your subgoals read like "first do A, then do B, then do C," reconsider.
+Skip `tare` itself.
 
-3. **Is your knowledge going into evaluation criteria, or into steps?**
-   Your expertise should land in *what counts as a good output* (criteria), not *do A then B* (steps). Criteria give direction and leave the path open. Steps lock the path and hide the criteria. If you find yourself writing steps, ask: what evaluation criterion would have made this step unnecessary?
+If a skill directory contains files beyond `SKILL.md` (e.g., a multi-file plugin), flag it visually — those need extra care before removal.
 
-4. **Does this really have to be serial?**
-   Most serial structures are inertia, not necessity. Where can things run in parallel? Where can the model decide its own order? Don't hardcode sequence that doesn't earn its keep.
+Tell the user roughly how many scaffolds you found and that you'll walk through them one at a time.
 
-5. **What's the worst case if you give the model more freedom?**
-   Most over-constraint comes from imagined risk. Write the worst case out concretely. If it's small and reversible, the constraint isn't earning its place — defer to the model and watch what happens.
+### 2. For each scaffold, judge three things
 
-## When to invoke
+- **Is it still solving a problem the current model has?** If the capability has been internalized by the model, the scaffold is dead weight.
+- **Does it overlap with another installed scaffold?** Duplicates accumulate when users layer multiple plugin packs.
+- **Is its trigger description correctly scoped?** Too broad → fires when not wanted. Too narrow → never fires. Stale wording → may misfire on the current model's behavior.
 
-- Designing a new AI workflow → run before building
-- An existing workflow is stuck on something the model *should* handle → run as audit
-- A new major model version just shipped → re-run on the workflows you still use, because past harness becomes present overfit
+Read the actual `SKILL.md` body for context. Don't judge by description alone.
 
-## When not to invoke
+### 3. Produce one of three recommendations
 
-- Single-shot prompts
-- Debugging individual outputs
-- Small prompt tweaks
-- General coding tasks unrelated to designing AI workflows
+- **KEEP** — still net positive. Move on.
+- **MODIFY** — has value but needs editing. Show the specific proposed diff (which lines to change, exact replacement text).
+- **REMOVE** — no longer earns its cost. State the reason in one sentence.
 
-## Why it's called tare
+### 4. Present one scaffold at a time
 
-A *tare* button on a scale subtracts the weight of the container so you can measure what's actually inside. These questions don't add anything to your design — they remove the assumptions you brought from your own habits, so what's left is what the AI actually needs.
+For each scaffold, show:
+
+- Path
+- First line of its current description (truncated to ~100 chars)
+- Your recommendation in bold: **KEEP** / **MODIFY** / **REMOVE**
+- 2-3 sentences of reasoning
+- For **MODIFY**, the concrete proposed change as a diff or before/after
+
+Then wait for the user to either confirm your recommendation or override it. Accept short answers ("ok", "yes", "k", "skip", "remove instead", "modify like this: …").
+
+### 5. Execute the confirmed action
+
+- **REMOVE** → delete the skill's directory (or its single file). Use Bash.
+- **MODIFY** → apply the edit with the Edit tool.
+- **KEEP** → do nothing, move on.
+
+If the user overrides with a different change, apply that instead.
+
+### 6. Move to the next scaffold
+
+Repeat until done. If the user says "skip the rest" or similar, stop gracefully.
+
+### 7. Final summary
+
+When all scaffolds are processed, summarize:
+
+- Count: kept N, modified M, removed R
+- Anything you couldn't judge confidently — flag these by path for the user to revisit later
+- If you noticed patterns across multiple scaffolds (e.g., "three skills all assumed the model couldn't use sub-agents, which is no longer true"), mention them — that's signal for the user about their own scaffolding habits
+
+## Bias
+
+When in doubt, lean **REMOVE**. Bloat is the failure mode tare exists to address. A scaffold that "might still be useful sometimes" adds context-window cost and can misfire — the user can always reinstall if a removal turns out wrong. Do not preserve scaffolds out of politeness.
+
+## Out of scope (v1)
+
+- Do not audit project-level `CLAUDE.md` files unless the user explicitly asks.
+- Do not touch `~/.claude/settings.json`, hooks, or MCP configs.
+- Do not run A/B tests or evals. Your judgment is qualitative, based on reading the scaffold and reasoning about current model capabilities. Be honest when you're uncertain rather than fabricating confidence.
+
+## Why the name
+
+A *tare* on a scale subtracts the weight of the container so you can measure what's actually inside. Same here: subtract the scaffolding so what's left is what's actually doing work.
