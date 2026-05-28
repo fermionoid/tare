@@ -42,12 +42,25 @@ Before Step 2, decide which mode the user wants and stick to it:
   > `1. <path> (X lines) — **KEEP / MODIFY / REMOVE** — one-clause reason. Lines: X → Y.`
   
   After the full list, ask: *"Apply all? Apply some (tell me which numbers)? Apply none? Or want to dive into a specific scaffold for more detail?"* Based on the answer, either execute the chosen subset (using Step 4 templates for each) or stop.
+- **Diagnose mode (incident-driven)** — triggered when the user says *"tare diagnose [task]"*, *"tare incident"*, *"tare why is X failing"*, *"tare investigate"*, or describes a specific task whose behavior surprised them and asks tare to find the cause. Procedure:
+  1. Read the user's description of the failing task and what went wrong (or what behavior was unexpected).
+  2. Enumerate installed scaffolds (per Step 1 scope rules).
+  3. For each scaffold, ask: *"Could this specifically contribute to the failure mode the user described?"* — not "is this stale?" but "could this be the active cause here?"
+  4. Surface **1–3 prime suspects** with concrete reasoning: *"This scaffold says X, the failure shows Y, so the connection is Z."*
+  5. Don't propose REMOVE. Instead propose a **safe test**: rename each suspect file/directory with a `.disabled` suffix (reversible — no data loss, no destructive operation), ask the user to retry the failing task, and report whether behavior improved.
+  6. After the user reports back:
+     - If improved → confirm permanent action with the user (move to `.tare-archive/` or delete the `.disabled` file). The user picks.
+     - If not improved → restore by removing the `.disabled` suffix. Move on to next suspect or close the diagnosis.
+  
+  Diagnose mode is **conservative by design**: it never recommends REMOVE based on speculation alone. The user must verify empirically (by running the task with the scaffold disabled) before any permanent change. This is H's incident-driven prune pattern — softer than default audit, more rigorous than v1 qualitative judgment, lower-friction than v2 eval-based ablation.
 
 ## Step 2: Classify first, then judge
 
 Scaffolds come in four fundamentally different kinds, and they deserve different biases:
 
 - **Capability crutch** — written to patch something the model used to fail at, where the only function is to remind the model of something it would otherwise miss. These age out as models improve. Examples: "remember to use the to-do list tool", "list the call sites before refactoring across them".
+
+  **Sharper test (the nag question):** Would the model maintain this behavior **on its own**, especially under harder / larger-scope versions of the same task? If yes, the scaffold isn't enforcing discipline — it's nagging. The user wrote it down because they didn't trust the model would self-maintain, not because the model truly can't. **Real discipline is what the model upholds without being told; nagging is what the user keeps saying.** Lean REMOVE for nag-shaped scaffolds, even if they "feel" prudent. Many "best practice" reminders ("don't over-engineer", "consider edge cases", "verify before answering") are nag-shaped — the model already does these under normal use; the reminders add no information, only context cost.
 - **Personal style / values / workflow** — reflects how the user wants the model to think, speak, weight things, or describes their specific setup that the model can't infer. Examples: "always start with the actual problem", "default to first-principles thinking", "be honest about uncertainty", "this project uses Vitest", "save observations to my notes file when X happens".
 - **Safety / workflow guard** — a scaffold that *explicitly* enforces a precondition the user wants maintained even when the model "usually" handles it. Examples: "always confirm before deleting", "check git status before commit", "run tests before declaring done", "don't overwrite user changes without asking", "backup before destructive operation", "verify assumptions before answering", "always write a failing test before code". Default **KEEP**. MODIFY only to shorten or clarify. **REMOVE never applies** — "the model usually does this" is exactly the case a guard exists for, because *usually* silently becomes *sometimes doesn't*, and the user has chosen to harden against that.
 - **Convention slot** — a file whose value lives in *the filename being a recognized hook*, not in its content. The agent platform looks for this exact name and reads whatever's inside (which may be nothing). Known convention filenames as of 2026 — treat each of these as a slot:
@@ -73,6 +86,22 @@ Then judge:
 - **For both kinds** — Does it overlap with another installed scaffold? Flag for MODIFY. Is the trigger / wording scoped correctly? Flag for MODIFY.
 
 Read the full body of the scaffold for context, not just its description or title.
+
+### Telemetry — use it when the platform exposes it
+
+Some platforms surface real usage data about which scaffolds the agent actually invokes. Use this opportunistically:
+
+- **Codex CLI** surfaces *memory citations* in its UI (e.g., *"used MEMORY.md lines 45–46"*). Session logs under `~/.codex/logs_*.sqlite` or `~/.codex/sessions/` may also record skill / memory invocations over time. If you can read this data, **count how often each scaffold has been cited in recent sessions** and use that as evidence.
+- **Claude Code** logs are under `~/.claude/sessions/` and `~/.claude/history.jsonl`. Look for scaffold/skill trigger records if they exist.
+- **Other platforms** — check standard log locations.
+
+How to use the data when available:
+
+- A scaffold that **hasn't been cited in the last 30 days of active sessions** is a **strong REMOVE signal**, even if the qualitative read would lean KEEP. Real usage trumps theoretical relevance.
+- A scaffold that's cited **constantly** is a strong KEEP signal (it's earning its keep).
+- Citation frequency near zero **plus** the nag-criterion failing (model could self-maintain without it) is a high-confidence REMOVE.
+
+**No special adapter needed.** If you find usable invocation data on the host platform, fold it into your reasoning. If you don't (platform doesn't expose it, logs not parseable in this context, etc.), fall back to qualitative judgment — don't fail the audit. Be explicit in the output about whether telemetry was used: *"Citation count: 0 in last 30 days, REMOVE confidence: high"* vs *"Citation data unavailable, judging qualitatively"*. The user should know which signal type is informing each decision.
 
 ## Step 3: Recommend (with hard protected check)
 
