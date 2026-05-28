@@ -20,6 +20,8 @@ You get **KEEP / MODIFY / REMOVE** per scaffold with reasoning. KEEPs proceed wi
 
 Want to see the whole audit before any changes happen? Say *"preview my scaffolds"* or *"dry run"* — tare produces a one-line-per-scaffold summary and asks at the end which (if any) to apply.
 
+> **A note on pacing.** tare pauses on every **MODIFY** or **REMOVE** recommendation, waiting for you to type `modify` / `keep` / `remove` (or describe what you want instead). **KEEP** recommendations auto-proceed — no input needed, tare just announces the reason and moves on. So if tare seems to "stop halfway," it didn't crash — it's waiting on you to decide.
+
 ## When to run it
 
 - After a major model version ships
@@ -34,23 +36,13 @@ Manual trigger only — tare doesn't watch for model updates. Run it when you fe
 
 ### Claude Code
 
-Install the skill (auto-triggers when you mention auditing):
-
 ```bash
 mkdir -p ~/.claude/skills/tare
 curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/SKILL.md \
   -o ~/.claude/skills/tare/SKILL.md
 ```
 
-Optional: also install the slash command for explicit invocation:
-
-```bash
-mkdir -p ~/.claude/commands
-curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/commands/tare.md \
-  -o ~/.claude/commands/tare.md
-```
-
-Then in a session, either say *"run tare"* / *"audit my skills"* (natural language, triggers the skill) or type `/tare` (slash command, hands off to the same skill).
+Then in a session, say *"run tare"* or *"audit my skills"*.
 
 ### Codex CLI
 
