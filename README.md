@@ -30,13 +30,23 @@ Not for: small prompt tweaks, single-shot prompting, general debugging.
 
 ### Claude Code
 
+Install the skill (auto-triggers when you mention auditing):
+
 ```bash
 mkdir -p ~/.claude/skills/tare
 curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/SKILL.md \
   -o ~/.claude/skills/tare/SKILL.md
 ```
 
-Then in a session say *"run tare"* or *"audit my skills"*.
+Optional: also install the slash command for explicit invocation:
+
+```bash
+mkdir -p ~/.claude/commands
+curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/commands/tare.md \
+  -o ~/.claude/commands/tare.md
+```
+
+Then in a session, either say *"run tare"* / *"audit my skills"* (natural language, triggers the skill) or type `/tare` (slash command, hands off to the same skill).
 
 ### Codex CLI
 
