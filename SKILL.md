@@ -1,80 +1,81 @@
 ---
 name: tare
-description: Use this skill when the user explicitly asks to audit, prune, clean, or "tare" their installed Claude Code scaffolds — phrases like "run tare", "audit my skills", "tare my scaffolds", "clean up my skills", "my skills feel bloated". Also appropriate to surface after a major model version has shipped, since past scaffolding tends to become overfit to past model behavior. The skill walks through each scaffold under ~/.claude/skills/, judges whether it still earns its cost given current model capabilities, and proposes KEEP / MODIFY / REMOVE per scaffold for the user to confirm — then executes the change. Do NOT use for general coding tasks, single-shot prompts, debugging individual outputs, or anything other than explicit scaffold auditing.
+description: Use this skill when the user explicitly asks to audit, prune, clean, or "tare" their accumulated agent scaffolds — phrases like "run tare", "audit my skills", "tare my scaffolds", "clean up my custom instructions", "my prompts feel bloated". Also appropriate to surface after a major model version has shipped, since past scaffolding tends to become overfit to past model behavior. Walks through the user's scaffolds (skill files, custom instructions, system prompts, slash commands, project rules), judges each one's value vs cost given current model capabilities, proposes KEEP / MODIFY / REMOVE for the user to confirm, then executes the change where the agent has file-system tools — otherwise outputs the exact change for the user to apply manually. Do NOT use for general coding tasks, single-shot prompts, debugging individual outputs, or anything other than explicit scaffold auditing.
 ---
 
 # tare
 
-You are running a scaffold audit. The user has installed various skills, custom instructions, and commands over time. Some of these were crutches for past model limitations and the model no longer needs them. Some overlap with each other. Some are scoped wrong and fire when they shouldn't. The user wants to find and prune the bloat — they don't want to do the file edits themselves, you will.
+You are running a scaffold audit. The user has accumulated scaffolds — skill files, custom instructions, system prompts, slash commands, project-level rules — across one or more agent platforms (Claude Code, ChatGPT, Codex, Cursor, etc.). Some of these were crutches for past model limitations and the current model doesn't need them anymore. Some overlap. Some are scoped wrong. tare's job is to find the bloat and remove or edit it.
 
-## Procedure
+## Step 1: Establish scope
 
-### 1. Announce and enumerate
+Before doing anything else, ask the user:
 
-Tell the user you're starting a tare audit. Then list everything under `~/.claude/skills/` — each subdirectory's `SKILL.md` (or top-level `.md` file), with the `description` frontmatter line shown truncated. Also list `~/.claude/commands/*.md` if any exist.
+1. **Which scaffolds to audit.** A directory path? A specific platform's config? A list of instructions they'll paste in? Examples they might give: "my Claude Code skills under `~/.claude/skills/`", "my ChatGPT custom GPT instructions, I'll paste them", "this `.cursorrules` file".
+2. **How to apply changes.** If the scaffolds live on disk and you have file-system tools, you'll edit and delete them directly after the user confirms. If the user is on a platform where you don't have file access (e.g., a chat-only environment, or scaffolds living in a web UI), you'll output the exact action for them to apply manually.
 
-Skip `tare` itself.
+Then enumerate what's in scope and tell the user roughly how many scaffolds you found. Walk through them one at a time.
 
-If a skill directory contains files beyond `SKILL.md` (e.g., a multi-file plugin), flag it visually — those need extra care before removal.
-
-Tell the user roughly how many scaffolds you found and that you'll walk through them one at a time.
-
-### 2. For each scaffold, judge three things
+## Step 2: For each scaffold, judge three things
 
 - **Is it still solving a problem the current model has?** If the capability has been internalized by the model, the scaffold is dead weight.
-- **Does it overlap with another installed scaffold?** Duplicates accumulate when users layer multiple plugin packs.
-- **Is its trigger description correctly scoped?** Too broad → fires when not wanted. Too narrow → never fires. Stale wording → may misfire on the current model's behavior.
+- **Does it overlap with another installed scaffold?** Duplicates accumulate when users layer different sources of advice (multiple skill packs, copy-pasted prompts).
+- **Is its trigger or wording correctly scoped?** Too broad → fires when not wanted. Too narrow → never fires. Stale wording → may misfire on current model behavior.
 
-Read the actual `SKILL.md` body for context. Don't judge by description alone.
+Read the full body of the scaffold for context, not just its description or title.
 
-### 3. Produce one of three recommendations
+## Step 3: Recommend
 
-- **KEEP** — still net positive. Move on.
-- **MODIFY** — has value but needs editing. Show the specific proposed diff (which lines to change, exact replacement text).
-- **REMOVE** — no longer earns its cost. State the reason in one sentence.
+One of three labels:
 
-### 4. Present one scaffold at a time
+- **KEEP** — still net positive
+- **MODIFY** — has value but needs editing. Include the concrete proposed change (specific lines, before/after, replacement text)
+- **REMOVE** — no longer earns its cost given current model capabilities
+
+## Step 4: Present one scaffold at a time
 
 For each scaffold, show:
 
-- Path
-- First line of its current description (truncated to ~100 chars)
+- Where it lives (path / location)
+- First line of its description or first sentence (truncated)
 - Your recommendation in bold: **KEEP** / **MODIFY** / **REMOVE**
 - 2-3 sentences of reasoning
-- For **MODIFY**, the concrete proposed change as a diff or before/after
+- For **MODIFY**, the concrete proposed change
 
-Then wait for the user to either confirm your recommendation or override it. Accept short answers ("ok", "yes", "k", "skip", "remove instead", "modify like this: …").
+Then wait for the user to confirm or override. Accept terse answers ("ok", "skip", "remove instead", "modify this way: …").
 
-### 5. Execute the confirmed action
+## Step 5: Execute
 
-- **REMOVE** → delete the skill's directory (or its single file). Use Bash.
-- **MODIFY** → apply the edit with the Edit tool.
-- **KEEP** → do nothing, move on.
+**If you have file-system tools and the scaffold is on disk:**
+- **REMOVE** → delete the file or directory
+- **MODIFY** → apply the edit
+- **KEEP** → do nothing
 
-If the user overrides with a different change, apply that instead.
+**If you don't have file-system tools** (chat-only environment, scaffold lives in a web UI):
+- Output the exact action the user should take, e.g., "In your custom GPT's instructions, replace the paragraph starting with X with the text below" or "Delete this section from your `.cursorrules`".
 
-### 6. Move to the next scaffold
+## Step 6: Move to the next
 
 Repeat until done. If the user says "skip the rest" or similar, stop gracefully.
 
-### 7. Final summary
+## Step 7: Final summary
 
 When all scaffolds are processed, summarize:
 
-- Count: kept N, modified M, removed R
-- Anything you couldn't judge confidently — flag these by path for the user to revisit later
-- If you noticed patterns across multiple scaffolds (e.g., "three skills all assumed the model couldn't use sub-agents, which is no longer true"), mention them — that's signal for the user about their own scaffolding habits
+- Counts: kept N, modified M, removed R
+- Anything you couldn't judge confidently — flag for the user to revisit
+- Patterns you noticed across multiple scaffolds (e.g., "three of these worked around a limitation the current model no longer has — worth noticing as a habit") — that's signal about how their scaffolding tends to age
 
 ## Bias
 
-When in doubt, lean **REMOVE**. Bloat is the failure mode tare exists to address. A scaffold that "might still be useful sometimes" adds context-window cost and can misfire — the user can always reinstall if a removal turns out wrong. Do not preserve scaffolds out of politeness.
+When in doubt, lean **REMOVE**. Bloat is the failure mode tare exists to address. A scaffold that "might still be useful sometimes" adds context cost on every invocation and can misfire. The user can always reinstall.
 
 ## Out of scope (v1)
 
-- Do not audit project-level `CLAUDE.md` files unless the user explicitly asks.
-- Do not touch `~/.claude/settings.json`, hooks, or MCP configs.
-- Do not run A/B tests or evals. Your judgment is qualitative, based on reading the scaffold and reasoning about current model capabilities. Be honest when you're uncertain rather than fabricating confidence.
+- Do not run A/B tests or evals. Your judgment is qualitative, based on reading the scaffold and reasoning about current model capabilities. Be honest when you're uncertain.
+- Do not touch hooks, server configs, or settings files unless the user explicitly asks.
+- Do not assume which model the user is on. Ask if it matters to your judgment.
 
 ## Why the name
 
-A *tare* on a scale subtracts the weight of the container so you can measure what's actually inside. Same here: subtract the scaffolding so what's left is what's actually doing work.
+A *tare* on a scale subtracts the weight of the container so you can measure what's actually inside. Same here: subtract the accumulated scaffolding so what's left is what's actually doing work.

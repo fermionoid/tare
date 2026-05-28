@@ -2,27 +2,31 @@
 
 > Subtract the scaffolding that's no longer earning its keep.
 
-A Claude Code skill that audits your installed scaffolds — skills, slash commands, custom instructions — and prunes the ones that have become bloat. Past scaffolding tends to overfit to past model behavior; tare finds the overfit and removes or edits it on your behalf.
+A general agent skill that audits the scaffolds you've accumulated — skill files, custom instructions, system prompts, slash commands, project rules — and prunes the ones that have become bloat. Works wherever you run agents: Claude Code, Codex CLI, ChatGPT, Cursor, and others.
+
+Past scaffolding tends to overfit to past model behavior. tare finds the overfit and removes or edits it on your behalf where the agent has tools to do so, or tells you what to change where it doesn't.
 
 ## What it does
 
-When you invoke tare, it walks through each scaffold you've installed and judges:
+When you invoke tare, the agent walks through your scaffolds and judges each one:
 
 - Is it still solving a problem the current model has?
 - Does it overlap with something else you've installed?
-- Is its trigger description correctly scoped?
+- Is its trigger or wording correctly scoped?
 
-For each scaffold it gives you a **KEEP / MODIFY / REMOVE** recommendation with reasoning. You confirm the direction (one keystroke per scaffold); tare does the file edits and deletions for you. You don't open an editor.
+You get **KEEP / MODIFY / REMOVE** per scaffold with reasoning. You confirm the direction; the agent does the file edits and deletions where it has tools, or outputs the exact change for you to apply elsewhere.
 
 ## When to run it
 
-- After a major model version ships — old crutches turn into overfit
-- When your context feels cluttered, or skills fire when they shouldn't
-- When you've layered multiple skill packs and suspect duplication
+- After a major model version ships
+- When your context feels cluttered or instructions fire when they shouldn't
+- When you've layered multiple skill packs or prompt sources and suspect duplication
 
-Not for: small prompt tweaks, single-shot prompting, or general debugging.
+Not for: small prompt tweaks, single-shot prompting, general debugging.
 
-## Install (Claude Code)
+## Install
+
+### Claude Code
 
 ```bash
 mkdir -p ~/.claude/skills/tare
@@ -30,7 +34,24 @@ curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/SKILL.md \
   -o ~/.claude/skills/tare/SKILL.md
 ```
 
-Then in a Claude Code session, say *"run tare"* or *"audit my skills"*.
+Then in a session say *"run tare"* or *"audit my skills"*.
+
+### Codex CLI
+
+Drop `SKILL.md` into your Codex skills directory (check your Codex config for the exact path), or paste its contents into your `AGENTS.md` / instructions file.
+
+### ChatGPT (web or desktop)
+
+Two options:
+
+1. **In a project or custom GPT** — paste the body of `SKILL.md` (everything below the `---` frontmatter) into the instructions field. Then start any chat by saying *"run tare on the scaffolds I'm about to paste"* and paste in the prompts/instructions you want audited.
+2. **Ad-hoc** — paste the body of `SKILL.md` at the top of a fresh chat, then ask it to audit whatever you paste next.
+
+Since ChatGPT can't edit files on your machine, tare will tell you what to change and you apply it yourself in ChatGPT settings or your prompt source.
+
+### Cursor / Windsurf / other agents
+
+Drop `SKILL.md` (with or without the frontmatter) into your rules / instructions directory. The body is plain markdown — no platform-specific syntax.
 
 ## Why "tare"
 
