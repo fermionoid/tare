@@ -54,7 +54,13 @@ Then in a session, either say *"run tare"* / *"audit my skills"* (natural langua
 
 ### Codex CLI
 
-Drop `SKILL.md` into your Codex skills directory (check your Codex config for the exact path), or paste its contents into your `AGENTS.md` / instructions file.
+```bash
+mkdir -p ~/.codex/skills/tare
+curl -fsSL https://raw.githubusercontent.com/fermionoid/tare/main/SKILL.md \
+  -o ~/.codex/skills/tare/SKILL.md
+```
+
+Then in a Codex session, say *"run tare"* or *"audit my skills"*. Codex's skill directory layout mirrors Claude Code's, so no other config needed.
 
 ### ChatGPT (web or desktop)
 
