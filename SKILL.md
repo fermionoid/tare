@@ -9,12 +9,14 @@ You are running a scaffold audit. The user has accumulated scaffolds — skill f
 
 ## Step 1: Determine scope (don't ask if you can figure it out)
 
-**If you have file-system tools, just go.** Default to the standard scaffold locations for whatever platform you're running on:
+**If you have file-system tools, just go.** Default to **only the host platform you're running on** — don't reach across to other platforms' scaffolds without the user explicitly asking. Specifically:
 
-- Claude Code → `~/.claude/skills/*` and `~/.claude/commands/*`
-- Codex CLI → `~/.codex/skills/*` (excluding `.system/`), the user's `~/.codex/superpowers/` if installed, and `~/.codex/AGENTS.md`
-- Cursor / Windsurf → `.cursor/rules/*` or `.cursorrules` in the current project root
-- Anything else with file access → check that platform's obvious config location
+- Running inside **Claude Code** → audit only `~/.claude/skills/*` and `~/.claude/commands/*` and `~/.claude/CLAUDE.md`. Do not touch `~/.codex/` or `~/.cursor/` or other platforms unless the user explicitly says so.
+- Running inside **Codex CLI** → audit only `~/.codex/skills/*` (excluding `.system/`), `~/.codex/superpowers/` if installed, and `~/.codex/AGENTS.md`. Do not touch `~/.claude/` or other platforms unless the user explicitly says so.
+- Running inside **Cursor / Windsurf** → audit only `.cursor/rules/*` or `.cursorrules` in the current project root.
+- Anything else with file access → audit only that platform's standard locations.
+
+**Cross-platform audits exist but must be opt-in.** If the user says *"audit all my scaffolds"* / *"include Claude Code too"* / *"check across platforms"*, then expand scope to include those locations. Otherwise, don't surprise the user by modifying files belonging to a platform they didn't invoke you from.
 
 **Always skip these — they're not the user's choices:**
 
@@ -194,10 +196,14 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 
 Per-file observations *within* a bundle can be reported as commentary ("3 of these skills look outdated"), but the action belongs upstream (open issue/PR) or via platform blocklist mechanisms.
 
+**Before any destructive operation (MODIFY or REMOVE), write a backup first.** Copy the target file to `<path>.tare-backup` (or move the target to `<path>.tare-backup` for REMOVE). After the edit, verify the result looks correct (file not unexpectedly truncated, contains the expected new text). If verification fails or the edit tool returns an error, **restore from the backup and surface the error to the user — do not leave the file in a corrupted state**. On success, delete the backup.
+
+This safeguard exists because edit tools occasionally fail mid-write (encoding errors, partial truncation, permission glitches). Without a backup, a corrupted edit silently destroys the user's content. With a backup, every destructive operation is reversible by definition.
+
 **If you have file-system tools and the scaffold is non-bundle:**
-- **REMOVE** → delete the file or directory (after passing the protected check)
-- **MODIFY** → apply the edit
-- **KEEP** → do nothing
+- **REMOVE** → write backup → delete the file or directory → if anything goes wrong, restore from backup
+- **MODIFY** → write backup → apply the edit → verify file looks intact → restore from backup if not → on success, delete backup
+- **KEEP** → do nothing (no backup needed)
 
 **If you don't have file-system tools** (chat-only environment, scaffold lives in a web UI):
 - Output the exact action the user should take, e.g., "In your custom GPT's instructions, replace the paragraph starting with X with the text below" or "Delete this section from your `.cursorrules`".
@@ -268,3 +274,5 @@ These are cases tare has gotten wrong in past dogfooding. The agent must produce
 - A skill inside `~/.codex/superpowers/<name>/` (or any third-party bundle) → audited at **bundle level**, no per-file REMOVE/MODIFY
 - A scaffold expressing user identity or style (e.g., *"always lead with the actual problem"*, *"reason from first principles"*, *"be honest about uncertainty"*) → **KEEP**, even when the model now does this by default
 - A symlink in the user's skills directory → check `readlink` before acting; if symlinked to a project the user owns, recommend KEEP unless the user explicitly says otherwise
+- Running tare inside Codex with files belonging to Claude Code on the same machine → audit **only `~/.codex/`** by default. Do not touch `~/.claude/` files without explicit user instruction
+- Edit tool returns an error mid-MODIFY → **restore from the `.tare-backup` immediately and surface the error**, never leave the target file in a partial-write state
