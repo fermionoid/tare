@@ -24,6 +24,16 @@ State what you're about to audit in one sentence ("I'll audit the N skills under
 - The user explicitly scoped it ("tare just my project rules", "audit only my custom GPT instructions") — follow that scope
 - Multiple plausible default locations exist and you genuinely can't tell which they meant — but assume the broadest reasonable one before asking
 
+## Operating modes
+
+Before Step 2, decide which mode the user wants and stick to it:
+
+- **Default mode** (the implicit one) — walk through scaffolds one at a time. For KEEP, announce and proceed without prompting. For MODIFY / REMOVE, pause for confirmation, then execute.
+- **Dry-run / preview mode** — triggered when the user says *"preview"*, *"dry run"*, *"don't apply"*, *"just show me"*, *"audit only"*, or similar. In this mode you don't execute anything. Instead produce a single compact summary report — one line per scaffold:
+  > `1. <path> (X lines) — **KEEP / MODIFY / REMOVE** — one-clause reason. Lines: X → Y.`
+  
+  After the full list, ask: *"Apply all? Apply some (tell me which numbers)? Apply none? Or want to dive into a specific scaffold for more detail?"* Based on the answer, either execute the chosen subset (using Step 4 templates for each) or stop.
+
 ## Step 2: Classify first, then judge
 
 Scaffolds come in two fundamentally different kinds, and they deserve opposite biases:
@@ -63,17 +73,17 @@ The user must be able to decide **yes / no / skip from what you show them alone*
 
 **Recommendation: KEEP / MODIFY / REMOVE**
 
-**For REMOVE** — quote the whole file (or the contiguous section being removed) in a code block, then 2-3 plain-language sentences on why it's no longer earning its keep. If the scaffold contradicts how the model currently behaves by default, quote that conflicting default behavior too, so the contradiction is concrete.
+**For KEEP** — one sentence on what unique value it adds that the current model wouldn't do by default. No quoting needed. End the block with: *"Moving on to the next scaffold."* and proceed without prompting. KEEP has no action to confirm — don't ask the user to make a decision about a non-action. (They can always interrupt if they disagree.)
 
-**For MODIFY** — quote the *exact text being removed* in one code block. Quote the *exact text being added* in another (if any). Then 2-3 sentences on why. End with: *"Result: file goes from X lines to Y lines."*
+**For MODIFY** — quote the *exact text being removed* in one code block. Quote the *exact text being added* in another (if any). Then 2-3 plain-language sentences on why. End with: *"Result: file goes from X lines to Y lines."* Then prompt:
+> **Your call:** type **modify** to apply this edit, **keep** to leave the file unchanged, **remove** to delete the whole scaffold instead, or describe a different edit.
 
-**For KEEP** — one sentence on what unique value it adds that the current model wouldn't do by default. No quoting needed.
-
-**Your call:** type **yes** to apply, **no** to skip, or tell me a different edit.
+**For REMOVE** — quote the whole file (or the contiguous section being removed) in a code block. Then 2-3 plain-language sentences on why it's no longer earning its keep. If the scaffold contradicts how the model currently behaves by default, quote that conflicting default behavior too. Then prompt:
+> **Your call:** type **remove** to delete, **keep** to leave it alone, **modify** if you'd rather edit, or describe a different action.
 
 ---
 
-Wait for the user's answer before moving to the next scaffold. Accept short answers ("yes", "ok", "no", "skip", "modify this way: …").
+For MODIFY and REMOVE, wait for the user's answer before moving on. Accept short answers ("keep", "modify", "remove", "skip") or full descriptions ("modify like this: …"). For KEEP, you've already moved on — no input needed.
 
 ## Plain language rule
 
@@ -114,7 +124,7 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 >
 > Result: file goes from 45 lines to ~22 lines.
 >
-> **Your call:** type **yes** to apply, **no** to skip, or tell me a different edit.
+> **Your call:** type **modify** to apply this edit, **keep** to leave the file unchanged, **remove** to delete the whole scaffold instead, or describe a different edit.
 
 ## Example of a good KEEP presentation (style case)
 
@@ -125,6 +135,8 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 > **Recommendation: KEEP**
 >
 > This is a personal style preference. Claude 4.7 *can* reason from fundamentals on its own — but it doesn't always lead with *"what's the actual problem here?"* The explicit instruction makes that pattern reliable and visible. Not a capability gap to patch, it's a way of working you've chosen to make explicit. Removing this would technically save context, but it would also erase a behavior you specifically asked for.
+>
+> *Moving on to the next scaffold.*
 
 ## Step 5: Execute
 

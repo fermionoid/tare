@@ -14,7 +14,9 @@ When you invoke tare, the agent walks through your scaffolds and judges each one
 - Does it overlap with something else you've installed?
 - Is its trigger or wording correctly scoped?
 
-You get **KEEP / MODIFY / REMOVE** per scaffold with reasoning. You confirm the direction; the agent does the file edits and deletions where it has tools, or outputs the exact change for you to apply elsewhere.
+You get **KEEP / MODIFY / REMOVE** per scaffold with reasoning. KEEPs proceed without asking. For MODIFY or REMOVE, you type the action you want (`modify`, `remove`, `keep`, or describe a custom edit). The agent does the file edits and deletions where it has tools, or outputs the exact change for you to apply elsewhere.
+
+Want to see the whole audit before any changes happen? Say *"preview my scaffolds"* or *"dry run"* — tare produces a one-line-per-scaffold summary and asks at the end which (if any) to apply.
 
 ## When to run it
 
