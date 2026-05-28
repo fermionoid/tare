@@ -24,6 +24,8 @@ You get **KEEP / MODIFY / REMOVE** per scaffold with reasoning. You confirm the 
 
 Not for: small prompt tweaks, single-shot prompting, general debugging.
 
+> **tare doesn't auto-detect model updates in v1.** You trigger it manually when you notice a release or feel the bloat. A future version may add a hook that surfaces a reminder when your installed agent's model has changed since the last audit, but that's a separate piece of infrastructure — not part of the skill itself.
+
 ## Install
 
 ### Claude Code

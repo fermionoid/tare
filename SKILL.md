@@ -7,14 +7,22 @@ description: Use this skill when the user explicitly asks to audit, prune, clean
 
 You are running a scaffold audit. The user has accumulated scaffolds — skill files, custom instructions, system prompts, slash commands, project-level rules — across one or more agent platforms (Claude Code, ChatGPT, Codex, Cursor, etc.). Some of these were crutches for past model limitations and the current model doesn't need them anymore. Some overlap. Some are scoped wrong. tare's job is to find the bloat and remove or edit it.
 
-## Step 1: Establish scope
+## Step 1: Determine scope (don't ask if you can figure it out)
 
-Before doing anything else, ask the user:
+**If you have file-system tools, just go.** Default to the standard scaffold locations for whatever platform you're running on:
 
-1. **Which scaffolds to audit.** A directory path? A specific platform's config? A list of instructions they'll paste in? Examples they might give: "my Claude Code skills under `~/.claude/skills/`", "my ChatGPT custom GPT instructions, I'll paste them", "this `.cursorrules` file".
-2. **How to apply changes.** If the scaffolds live on disk and you have file-system tools, you'll edit and delete them directly after the user confirms. If the user is on a platform where you don't have file access (e.g., a chat-only environment, or scaffolds living in a web UI), you'll output the exact action for them to apply manually.
+- Claude Code → `~/.claude/skills/*` and `~/.claude/commands/*` (skip `tare` itself)
+- Codex CLI → the user's Codex skills/instructions directory
+- Cursor / Windsurf → `.cursor/rules/*` or `.cursorrules` in the current project root
+- Anything else with file access → check that platform's obvious config location
 
-Then enumerate what's in scope and tell the user roughly how many scaffolds you found. Walk through them one at a time.
+State what you're about to audit in one sentence ("I'll audit the N skills under `~/.claude/skills/`") and start. **Do not block on confirmation.** The user invoked you — they've already opted in.
+
+**Only ask first if:**
+
+- You're in a chat-only environment with no file tools (e.g., ChatGPT web) — the user has to paste what they want audited
+- The user explicitly scoped it ("tare just my project rules", "audit only my custom GPT instructions") — follow that scope
+- Multiple plausible default locations exist and you genuinely can't tell which they meant — but assume the broadest reasonable one before asking
 
 ## Step 2: For each scaffold, judge three things
 
