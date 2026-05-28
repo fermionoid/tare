@@ -105,20 +105,75 @@ The user must be able to decide **yes / no / skip from what you show them alone*
 
 **Recommendation: KEEP / MODIFY / REMOVE**
 
-**For KEEP** — one sentence on *why it's net positive*, framed by the scaffold's class:
+**For KEEP** — short, scannable structure. Use this exact format:
 
-- **Convention slot** → why the slot needs to remain (it's a platform hook; presence is the value)
-- **Safety / workflow guard** → what risk or precondition it constrains
-- **Personal style / values** → what user-chosen behavior it makes explicit
-- **Capability gap** → what the current model wouldn't do by default that this scaffold ensures
+```
+**What it does:** [one sentence, under 30 words]
 
-No quoting needed. End the block with: *"Moving on to the next scaffold."* and proceed without prompting. KEEP has no action to confirm — don't ask the user to make a decision about a non-action. (They can always interrupt if they disagree.)
+**Recommendation:** KEEP
 
-**For MODIFY** — quote the *exact text being removed* in one code block. Quote the *exact text being added* in another (if any). Then 2-3 plain-language sentences on why. End with: *"Result: file goes from X lines to Y lines."* Then prompt:
-> **Your call:** type **modify** to apply this edit, **keep** to leave the file unchanged, **remove** to delete the whole scaffold instead, or describe a different edit.
+**Why kept:**
+- [reason point 1]
+- [reason point 2, only if there's a second distinct point]
+- [point 3, only if genuinely needed]
 
-**For REMOVE** — quote the whole file (or the contiguous section being removed) in a code block. Then 2-3 plain-language sentences on why it's no longer earning its keep. If the scaffold contradicts how the model currently behaves by default, quote that conflicting default behavior too. Then prompt:
-> **Your call:** type **remove** to delete, **keep** to leave it alone, **modify** if you'd rather edit, or describe a different action.
+---
+```
+
+Justify by the scaffold's class (convention slot / safety guard / personal style / capability gap), and only use bullets when there are genuinely multiple distinct points. **A single-point KEEP gets one bullet, not a prose paragraph.** Never write the KEEP reasoning as flowing prose — that's the format failure mode this template prevents.
+
+End the block with `---` (horizontal rule) and proceed without prompting. KEEP has no action to confirm — don't ask for input on a non-action. (User can always interrupt.)
+
+**For MODIFY** — use this structure:
+
+```
+**What it does:** [one sentence]
+
+**Recommendation:** MODIFY
+
+**Remove this:**
+[code block with exact text being removed]
+
+**Replace with:**
+[code block with exact text being added — omit this block if pure deletion]
+
+**Why:**
+- [reason point 1]
+- [reason point 2, if needed]
+
+**Result:** file goes from X to Y lines.
+
+**Your call:** type **modify** to apply this edit, **keep** to leave the file unchanged, **remove** to delete the whole scaffold instead, or describe a different edit.
+
+---
+```
+
+Bulleted why-reasons, not prose. Code blocks for both removal and replacement text. Bold-verb prompt at the end. Horizontal rule between scaffolds.
+
+**For REMOVE** — use this structure:
+
+```
+**What it does:** [one sentence]
+
+**Recommendation:** REMOVE
+
+**File contents being removed:**
+[code block — full file, or the contiguous section]
+
+**Why removed:**
+- [reason point 1 — specific user-visible behavior change]
+- [reason point 2, if needed]
+
+[If the scaffold contradicts current default behavior, add:]
+**Conflicting default behavior:**
+[code block quoting the default that already does what this scaffold tried to add]
+
+**Your call:** type **remove** to delete, **keep** to leave it alone, **modify** if you'd rather edit, or describe a different action.
+
+---
+```
+
+Same principles: bulleted reasons (no prose), code blocks for quoted text, bold-verb prompt, horizontal rule between scaffolds.
 
 ---
 
@@ -152,11 +207,11 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 
 > ### Scaffold 3 of 5: `~/.claude/skills/my-test-helper/SKILL.md` (45 lines)
 >
-> **What it does:** auto-triggers when you mention writing tests, and reminds Claude to follow test-driven development.
+> **What it does:** auto-triggers when you mention writing tests and reminds Claude to follow test-driven development.
 >
-> **Recommendation: MODIFY**
+> **Recommendation:** MODIFY
 >
-> Remove this block (lines 12–28):
+> **Remove this:**
 > ```
 > Before writing code, always:
 > 1. Write the failing test first
@@ -165,13 +220,15 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 > 4. Run again and confirm it passes
 > ```
 >
-> Why: Claude 4.7 already proposes tests alongside code when you ask for a feature — it doesn't need this explicit TDD reminder anymore. This block was useful when the model used to skip the test step on its own.
+> **Why:**
+> - Claude 4.7 already proposes tests alongside code when you ask for a feature — this explicit TDD reminder is now redundant
+> - Keep the rest of the file: the Vitest-vs-Jest section is specific to your setup and worth keeping
 >
-> Keep the rest of the file — the part about your project's test framework (Vitest vs Jest) is specific to your setup and worth keeping.
->
-> Result: file goes from 45 lines to ~22 lines.
+> **Result:** file goes from 45 lines to ~22 lines.
 >
 > **Your call:** type **modify** to apply this edit, **keep** to leave the file unchanged, **remove** to delete the whole scaffold instead, or describe a different edit.
+>
+> ---
 
 ## Example of a good KEEP presentation (style case)
 
@@ -179,11 +236,13 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 >
 > **What it does:** instructs Claude to start by questioning assumptions and naming the actual problem before proposing solutions.
 >
-> **Recommendation: KEEP**
+> **Recommendation:** KEEP
 >
-> This is a personal style preference. Claude 4.7 *can* reason from fundamentals on its own — but it doesn't always lead with *"what's the actual problem here?"* The explicit instruction makes that pattern reliable and visible. Not a capability gap to patch, it's a way of working you've chosen to make explicit. Removing this would technically save context, but it would also erase a behavior you specifically asked for.
+> **Why kept:**
+> - Personal style preference — Claude *can* reason from fundamentals, but doesn't always *lead with "what's the actual problem here?"*. The explicit instruction makes that pattern reliable
+> - Not a capability gap to patch — it's a way of working you've chosen to make explicit. Removing would save context but erase a behavior you asked for
 >
-> *Moving on to the next scaffold.*
+> ---
 
 ## Step 5: Execute
 
