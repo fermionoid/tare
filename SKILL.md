@@ -87,21 +87,40 @@ Then judge:
 
 Read the full body of the scaffold for context, not just its description or title.
 
-### Telemetry — use it when the platform exposes it
+### Local invocation logs — read them when the platform writes them locally
 
-Some platforms surface real usage data about which scaffolds the agent actually invokes. Use this opportunistically:
+Some platforms write session logs to the user's own disk that record which scaffolds/memories the agent actually invoked. **This is local-only data on the user's machine** — not server-side analytics. tare reads files; it does not initiate any network calls. Use this data opportunistically as a strong signal in audit decisions.
 
-- **Codex CLI** surfaces *memory citations* in its UI (e.g., *"used MEMORY.md lines 45–46"*). Session logs under `~/.codex/logs_*.sqlite` or `~/.codex/sessions/` may also record skill / memory invocations over time. If you can read this data, **count how often each scaffold has been cited in recent sessions** and use that as evidence.
-- **Claude Code** logs are under `~/.claude/sessions/` and `~/.claude/history.jsonl`. Look for scaffold/skill trigger records if they exist.
-- **Other platforms** — check standard log locations.
+**Codex CLI** writes session logs at `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`. Each agent response can include a structured `memory_citation` field:
 
-How to use the data when available:
+```json
+"memory_citation": {
+  "entries": [
+    {"path": "MEMORY.md", "lineStart": 45, "lineEnd": 46, "note": "..."},
+    {"path": "<other scaffold>", "lineStart": 12, "lineEnd": 20, "note": "..."}
+  ]
+}
+```
 
-- A scaffold that **hasn't been cited in the last 30 days of active sessions** is a **strong REMOVE signal**, even if the qualitative read would lean KEEP. Real usage trumps theoretical relevance.
-- A scaffold that's cited **constantly** is a strong KEEP signal (it's earning its keep).
-- Citation frequency near zero **plus** the nag-criterion failing (model could self-maintain without it) is a high-confidence REMOVE.
+To use this on Codex:
+1. Glob `~/.codex/sessions/**/*.jsonl` (or limit to recent N days for speed)
+2. Parse each line as JSON, extract `payload.content[*].memory_citation.entries[].path` (the field may also appear nested under other keys — be flexible)
+3. **Count citations per unique `path`** across the time window
+4. Map paths back to scaffolds in audit scope
 
-**No special adapter needed.** If you find usable invocation data on the host platform, fold it into your reasoning. If you don't (platform doesn't expose it, logs not parseable in this context, etc.), fall back to qualitative judgment — don't fail the audit. Be explicit in the output about whether telemetry was used: *"Citation count: 0 in last 30 days, REMOVE confidence: high"* vs *"Citation data unavailable, judging qualitatively"*. The user should know which signal type is informing each decision.
+**Claude Code** has session logs under `~/.claude/sessions/` and `~/.claude/history.jsonl`. Structure may differ from Codex; check before parsing. If invocation/skill records exist, use the same counting approach. If unclear, fall back to qualitative judgment.
+
+**Other platforms** — check standard log locations; parse opportunistically; never assume a fixed schema.
+
+How to use the counts:
+
+- A scaffold cited **0 times in last 30 days of active sessions** → **strong REMOVE signal**, even if qualitative read would lean KEEP. Real usage trumps theoretical relevance.
+- A scaffold cited **constantly** → strong KEEP signal (clearly earning its keep)
+- Count near zero **plus** the nag criterion failing (model would self-maintain without it) → **high-confidence REMOVE**
+
+**No special adapter required.** If you find usable invocation data on the host platform, fold it into your reasoning. If parsing fails, schema looks different, or files don't exist, **fall back to qualitative judgment** — don't fail the audit. **Be explicit in the output about which signal type informed each decision**: *"Citation count: 0 in last 30 days, REMOVE confidence: high"* vs *"Invocation data unavailable, judging qualitatively"*. The user should always know what evidence supports each call.
+
+**Important note on terminology:** these are **local invocation logs**, written by the platform to your own disk for your own use. Whether the platform also sends server-side telemetry to its vendor (OpenAI, Anthropic, etc.) is a separate question outside tare's scope — tare only reads local files.
 
 ## Step 3: Recommend (with hard protected check)
 
