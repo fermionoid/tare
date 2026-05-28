@@ -2,9 +2,11 @@
 
 > Subtract the scaffolding that's no longer earning its keep.
 
-A general agent skill that audits the scaffolds you've accumulated — skill files, custom instructions, system prompts, slash commands, project rules — and prunes the ones that have become bloat. Works wherever you run agents: Claude Code, Codex CLI, ChatGPT, Cursor, and others.
+A small skill I made for myself, because Superpowers had started feeling cluttered and a Lenny podcast with Cat Wu about how AI scaffolding ages into bloat reminded me I could just build a tool for it.
 
-Past scaffolding tends to overfit to past model behavior. tare finds the overfit and removes or edits it on your behalf where the agent has tools to do so, or tells you what to change where it doesn't.
+tare walks through your installed agent scaffolds — skill files, custom instructions, slash commands, project rules — and suggests what to do with each.
+
+Works wherever you run agents: Claude Code, Codex CLI, ChatGPT, Cursor.
 
 ## What it does
 
@@ -26,7 +28,7 @@ Want to see the whole audit before any changes happen? Say *"preview my scaffold
 
 Not for: small prompt tweaks, single-shot prompting, general debugging.
 
-> **tare doesn't auto-detect model updates in v1.** You trigger it manually when you notice a release or feel the bloat. A future version may add a hook that surfaces a reminder when your installed agent's model has changed since the last audit, but that's a separate piece of infrastructure — not part of the skill itself.
+Manual trigger only — tare doesn't watch for model updates. Run it when you feel like checking in.
 
 ## Install
 
@@ -70,6 +72,10 @@ Drop `SKILL.md` (with or without the frontmatter) into your rules / instructions
 ## Why "tare"
 
 The *tare* button on a scale subtracts the weight of the container so you measure what's actually inside. Same idea here.
+
+## Take it or rewrite it
+
+I made tare for myself. If it fits your taste, install it. If you'd rather lift the idea and write your own version, that's also fine — the concept matters more than this particular file.
 
 ## License
 
