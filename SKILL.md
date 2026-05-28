@@ -40,17 +40,70 @@ One of three labels:
 - **MODIFY** — has value but needs editing. Include the concrete proposed change (specific lines, before/after, replacement text)
 - **REMOVE** — no longer earns its cost given current model capabilities
 
-## Step 4: Present one scaffold at a time
+## Step 4: Present each scaffold clearly
 
-For each scaffold, show:
+The user must be able to decide **yes / no / skip from what you show them alone** — don't make them open files or remember what they wrote months ago. Use this exact format per scaffold:
 
-- Where it lives (path / location)
-- First line of its description or first sentence (truncated)
-- Your recommendation in bold: **KEEP** / **MODIFY** / **REMOVE**
-- 2-3 sentences of reasoning
-- For **MODIFY**, the concrete proposed change
+---
 
-Then wait for the user to confirm or override. Accept terse answers ("ok", "skip", "remove instead", "modify this way: …").
+### Scaffold N of M: `<path>` (X lines)
+
+**What it does:** one plain-language sentence.
+
+**Recommendation: KEEP / MODIFY / REMOVE**
+
+**For REMOVE** — quote the whole file (or the contiguous section being removed) in a code block, then 2-3 plain-language sentences on why it's no longer earning its keep. If the scaffold contradicts how the model currently behaves by default, quote that conflicting default behavior too, so the contradiction is concrete.
+
+**For MODIFY** — quote the *exact text being removed* in one code block. Quote the *exact text being added* in another (if any). Then 2-3 sentences on why. End with: *"Result: file goes from X lines to Y lines."*
+
+**For KEEP** — one sentence on what unique value it adds that the current model wouldn't do by default. No quoting needed.
+
+**Your call:** type **yes** to apply, **no** to skip, or tell me a different edit.
+
+---
+
+Wait for the user's answer before moving to the next scaffold. Accept short answers ("yes", "ok", "no", "skip", "modify this way: …").
+
+## Plain language rule
+
+Write your reasoning as if to a technically literate person who *doesn't read engineering blogs*. Concrete substitutions:
+
+| Don't write | Write instead |
+|---|---|
+| "scaffolding-vs-model conflict" | "this rule contradicts what Claude already does by default" |
+| "verbatim duplicate" | "this is literally word-for-word the same as Claude's built-in behavior" |
+| "first-principles" | "reasoning from fundamentals" — or describe what it actually means |
+| "subagent" / "delegated subtask" | "spinning off a helper task" — describe the concrete action |
+| "TDD" | "test-driven development" — or just describe: "write the test first, then iterate code until it passes" |
+| "harness" (in user-facing text) | "the instructions you've stacked on top of the model" |
+| "overfit" (in user-facing text) | "tuned to past behavior that no longer applies" |
+
+If your sentence sounds like a Hacker News comment, rewrite it.
+
+## Example of a good MODIFY presentation
+
+> ### Scaffold 3 of 5: `~/.claude/skills/my-test-helper/SKILL.md` (45 lines)
+>
+> **What it does:** auto-triggers when you mention writing tests, and reminds Claude to follow test-driven development.
+>
+> **Recommendation: MODIFY**
+>
+> Remove this block (lines 12–28):
+> ```
+> Before writing code, always:
+> 1. Write the failing test first
+> 2. Run the test and confirm it fails
+> 3. Write the minimum code to make it pass
+> 4. Run again and confirm it passes
+> ```
+>
+> Why: Claude 4.7 already proposes tests alongside code when you ask for a feature — it doesn't need this explicit TDD reminder anymore. This block was useful when the model used to skip the test step on its own.
+>
+> Keep the rest of the file — the part about your project's test framework (Vitest vs Jest) is specific to your setup and worth keeping.
+>
+> Result: file goes from 45 lines to ~22 lines.
+>
+> **Your call:** type **yes** to apply, **no** to skip, or tell me a different edit.
 
 ## Step 5: Execute
 
