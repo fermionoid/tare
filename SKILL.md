@@ -24,11 +24,22 @@ State what you're about to audit in one sentence ("I'll audit the N skills under
 - The user explicitly scoped it ("tare just my project rules", "audit only my custom GPT instructions") — follow that scope
 - Multiple plausible default locations exist and you genuinely can't tell which they meant — but assume the broadest reasonable one before asking
 
-## Step 2: For each scaffold, judge three things
+## Step 2: Classify first, then judge
 
-- **Is it still solving a problem the current model has?** Assume the user is on the latest model their platform offers — that's the default case. If the capability has been internalized by that model, the scaffold is dead weight. *Exception:* if the user has mentioned they also use older or cheaper models (e.g., "I sometimes drop to a smaller model for cost"), bias toward keeping scaffolds the weaker model still needs.
-- **Does it overlap with another installed scaffold?** Duplicates accumulate when users layer different sources of advice (multiple skill packs, copy-pasted prompts).
-- **Is its trigger or wording correctly scoped?** Too broad → fires when not wanted. Too narrow → never fires. Stale wording → may misfire on current model behavior.
+Scaffolds come in two fundamentally different kinds, and they deserve opposite biases:
+
+- **Capability crutch** — written to patch something the model used to fail at, or to enforce a workflow that helped a weaker model perform. These age out as models improve. Examples: "remember to use the to-do list tool", "always write a failing test before code", "verify your assumptions explicitly before answering".
+- **Personal style / values / workflow** — reflects how the user wants the model to think, speak, weight things, or describes their specific setup that the model can't infer. Examples: "always start with the actual problem", "default to first-principles thinking", "be honest about uncertainty", "this project uses Vitest", "save observations to my notes file when X happens".
+
+**The distinction matters because "the model CAN do X" is not the same as "the model WILL do X consistently / announce it / emphasize it."** A style instruction shifts visible model behavior toward what the user wants even when the underlying capability is already there. Erasing it erases the user's voice.
+
+**If you can't tell which kind a scaffold is, ask the user one line:** *"Is this an aging workaround, or is it your personal style? Either is fine — I just want to bias the right way."* Don't guess.
+
+Then judge:
+
+- **For capability crutches** — Has the current model internalized this? If yes → REMOVE candidate. If no → KEEP. Assume the user is on the latest model their platform offers; if they've mentioned mixing in older/cheaper models, bias toward keeping crutches the weaker model still needs.
+- **For personal style / values / workflow** — Default to KEEP. Only suggest REMOVE if it actively contradicts another scaffold or current default behavior. MODIFY is still on the table if the wording is stale or too broad.
+- **For both kinds** — Does it overlap with another installed scaffold? Flag for MODIFY. Is the trigger / wording scoped correctly? Flag for MODIFY.
 
 Read the full body of the scaffold for context, not just its description or title.
 
@@ -105,6 +116,16 @@ If your sentence sounds like a Hacker News comment, rewrite it.
 >
 > **Your call:** type **yes** to apply, **no** to skip, or tell me a different edit.
 
+## Example of a good KEEP presentation (style case)
+
+> ### Scaffold 4 of 5: `~/.claude/CLAUDE.md` lines 23–28
+>
+> **What it does:** instructs Claude to start by questioning assumptions and naming the actual problem before proposing solutions.
+>
+> **Recommendation: KEEP**
+>
+> This is a personal style preference. Claude 4.7 *can* reason from fundamentals on its own — but it doesn't always lead with *"what's the actual problem here?"* The explicit instruction makes that pattern reliable and visible. Not a capability gap to patch, it's a way of working you've chosen to make explicit. Removing this would technically save context, but it would also erase a behavior you specifically asked for.
+
 ## Step 5: Execute
 
 **If you have file-system tools and the scaffold is on disk:**
@@ -129,7 +150,11 @@ When all scaffolds are processed, summarize:
 
 ## Bias
 
-When in doubt, lean **REMOVE**. Bloat is the failure mode tare exists to address. A scaffold that "might still be useful sometimes" adds context cost on every invocation and can misfire. The user can always reinstall.
+**For capability crutches — lean REMOVE.** Bloat is a real failure mode and aged workarounds add context cost while sometimes misfiring. The user can always reinstall.
+
+**For personal style / values / workflow — lean KEEP.** Even when the model could behave that way unprompted, the user has chosen to make the behavior explicit, and erasing that erases their voice. Only REMOVE these if they actively contradict another scaffold or current default behavior.
+
+**When uncertain which kind a scaffold is — ask before recommending.** Don't guess and risk deleting someone's voice. Tare exists to catch bloat, not to flatten personal style.
 
 ## Out of scope (v1)
 
