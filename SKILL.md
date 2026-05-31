@@ -81,7 +81,13 @@ Scaffolds come in four fundamentally different kinds, and they deserve different
 
 Then judge:
 
-- **For capability crutches** — Has the current model internalized this? If yes → REMOVE candidate. If no → KEEP. Assume the user is on the latest model their platform offers; if they've mentioned mixing in older/cheaper models, bias toward keeping crutches the weaker model still needs.
+- **For capability crutches** — Has the current model internalized this? If yes → REMOVE candidate. If no → KEEP.
+
+  **The baseline is the model running this audit — i.e., you.** Don't try to reason about "the latest model in the world" or look up release notes about some other version. Judge against your own behavior: *would I, the model executing this audit right now, do this without the scaffold?* In the common case, the model running tare is the same model the user works with daily, so this is exactly the right baseline — a 4.7 user genuinely needs 4.7-era crutches; a 4.8 user may not. The scaffold's value is relative to the model actually in the seat.
+
+  **Caveat — don't trust your own introspection blindly.** Models are not always accurate about their own defaults. When you're unsure whether you'd really do something without the scaffold, don't assert — **test empirically**: actually attempt the relevant task (or a small version of it) with the scaffold's guidance withheld, and observe what you do. Behavior beats self-report. If you can't test in this context, say so and lean KEEP.
+
+  **Exception** — if the user has said they work daily on a different or cheaper model than the one running this audit (e.g., audit on Opus 4.8 but code on Sonnet for cost), judge against *that* model, not yourself, and bias toward keeping crutches the weaker model still needs.
 - **For personal style / values / workflow** — Default to KEEP. Only suggest REMOVE if it actively contradicts another scaffold or current default behavior. MODIFY is still on the table if the wording is stale or too broad.
 - **For both kinds** — Does it overlap with another installed scaffold? Flag for MODIFY. Is the trigger / wording scoped correctly? Flag for MODIFY.
 
@@ -357,7 +363,7 @@ If you encounter any of these during enumeration, note them in your scope statem
 ## Other out-of-scope rules
 
 - Do not run A/B tests or evals. Your judgment is qualitative, based on reading the scaffold and reasoning about current model capabilities. Be honest when you're uncertain.
-- Don't proactively ask which model the user is on — assume latest. They'll mention it if they're mixing models for cost.
+- Don't proactively ask which model the user is on — the baseline is whatever model is running this audit (that's you). They'll mention it if they work daily on a different/cheaper model.
 
 ## The articulation rule (most important guardrail)
 
